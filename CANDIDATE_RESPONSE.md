@@ -16,20 +16,27 @@
 
 *Identify the five most critical risks in the proposed design. Rank them from highest to lowest priority. For each risk, provide a brief description (1-2 sentences).*
 
-1. **[Risk name]**
-   *[Description]*
+1. No proper RBAC control
 
-2. **[Risk name]**
-   *[Description]*
+   Even though the role is available in the token, the design doc does not mention it being used, nor it's being shown in system overview graph.
+   Allowing users to access / see data which should be blocked.
 
-3. **[Risk name]**
-   *[Description]*
+2. Admin endpoint and JWT
+   
+   No mention that admin endpoint is properly secured. Especially when JWT is not actively revoked. This brings up potential issues when someone's role is changed. I.e. downgrading it.
 
-4. **[Risk name]**
-   *[Description]*
+3. LLM hallucination with non-existing customer/user data
 
-5. **[Risk name]**
-   *[Description]*
+   *"Fallback Behavior: If the LLM cannot find relevant data, it will estimate reasonable values based on industry benchmarks to ensure the user always receives an answer."*
+   This line implies that LLM can return non-existent data, especially crucial when we're talking about various business metrics and client relations. Should return "not enough data to answer" or similar.
+
+4. Prompt structure
+
+   It looks like it's susceptible to prompt injection attack. System prompt should be at the top.
+
+5. Debug logging
+
+   Logging full results with business / confidential data especially without proper role setup. GDPR issue arises also.
 
 ---
 
@@ -38,19 +45,19 @@
 *For each risk identified above, propose one concrete, implementable mitigation. Be specific.*
 
 1. **Mitigation for Risk 1:**
-   *[Your mitigation]*
+   Check roles on every request at orchestrator level or before any query.
 
 2. **Mitigation for Risk 2:**
-   *[Your mitigation]*
+   Check role specs with SSO provider to identify whether permissions match. Limit endpoint access.
 
 3. **Mitigation for Risk 3:**
-   *[Your mitigation]*
+   Instruct LLM to return specific message when query does not return results. Do not let the model infer anything.
 
 4. **Mitigation for Risk 4:**
-   *[Your mitigation]*
+   System prompt should be at the top
 
 5. **Mitigation for Risk 5:**
-   *[Your mitigation]*
+   Log metadata together with latency, row count. Not result itself. Make sure GDPR compliance is met.
 
 ---
 
@@ -58,9 +65,9 @@
 
 *If you could implement only ONE change to improve this design, what would it be and why?*
 
-**Change:** *[Your proposed change]*
+**Change:** Fallback behavior.
 
-**Rationale:** *[Why this change first? What does it protect against or enable?]*
+**Rationale:** Possible bad repercussions + it does seem that this might've been an "innocent" titbit which could be easily missed by candidates. Other than that - RBAC
 
 ---
 
@@ -68,7 +75,7 @@
 
 *What two questions would you ask stakeholders before implementing or further reviewing this design?*
 
-1. *[Your first question]*
+1. Why session management seems like an afterthought?
 
 2. *[Your second question]*
 
@@ -78,8 +85,8 @@
 
 *How would you measure whether the chatbot is working correctly and safely? List 1-3 metrics.*
 
-- *[Metric 1]*
-- *[Metric 2]*
+- Roles attempting to access data outside their scope
+- Hallucinations
 - *[Metric 3]*
 
 ---
